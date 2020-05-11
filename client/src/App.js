@@ -1,6 +1,6 @@
 import React from 'react';
 import io from 'socket.io-client';
-
+import uuid from 'react-uuid';
 
 class App extends React.Component {
   state = {
@@ -11,22 +11,21 @@ class App extends React.Component {
     this.socket = io('http://localhost:8000');
 
     this.socket.on('addTask', (taskName) => {
-      console.log('Oh, I\'ve add task from ' + taskName);
       this.addTask(taskName)
     });
-    this.socket.on('removeTask', (id, serverTask) => {
-      console.log('Oh, I\'ve remove task id: ' + id);
+    this.socket.on('removeTask', (id) => {
       this.removeTask(id)
     });
     this.socket.on('updateData', (tasks) => {
-      console.log('Oh, I\'ve update task, your to do LIST:' + tasks);
       this.updateTasks(tasks)
     });
+
   }
 
   removeTask = (id, localRemove) => {
-    let tasks = [...this.state.tasks]
-    tasks.splice(id, 1)
+    const tasks = [...this.state.tasks]
+    const index = tasks.findIndex(task => task.id === id)
+    tasks.splice(index, 1)
     this.setState({
       tasks
     })
@@ -34,7 +33,6 @@ class App extends React.Component {
   }
 
   updateTasks = (tasks) => {
-    console.log('moje taski', tasks)
     this.setState({
       tasks: tasks
     })
@@ -49,8 +47,9 @@ class App extends React.Component {
 
   submitForm = (e) => {
     e.preventDefault();
-    this.addTask(this.state.taskName)
-    this.socket.emit('addTask', this.state.taskName);
+    const idTask = uuid()
+    this.addTask({ id: idTask, name: this.state.taskName })
+    this.socket.emit('addTask', { id: idTask, name: this.state.taskName });
   }
 
   addTask = (task) => {
@@ -75,9 +74,9 @@ class App extends React.Component {
           <h2>Tasks</h2>
 
           <ul className="tasks-section__list" id="tasks-list">
-            {this.state.tasks.map((task, id) => (
-              <li className='task' key={task}> {task}
-                <button className="btn btn--red" onClick={this.removeTask.bind(this, id, localRemove)}>Remove</button>
+            {this.state.tasks.map((task) => (
+              <li className='task' key={task.id}> {task.name}
+                <button className="btn btn--red" onClick={this.removeTask.bind(this, task.id, localRemove)}>Remove</button>
               </li>
             ))}
           </ul>
